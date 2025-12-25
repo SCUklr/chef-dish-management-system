@@ -1,13 +1,19 @@
 import mysql.connector
+import os
+from dotenv import load_dotenv
+
+# 加载环境变量
+load_dotenv()
 
 # 建立与数据库的连接
 def connect_to_database():
     try:
         conn = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            password="klrklr",
-            database="chefdishmanagement"
+            host=os.getenv("DB_HOST", "localhost"),
+            port=int(os.getenv("DB_PORT", "3306")),
+            user=os.getenv("DB_USER", "root"),
+            password=os.getenv("DB_PASSWORD", "root"),
+            database=os.getenv("DB_NAME", "chefdishmanagement")
         )
         print("成功连接到数据库")
         return conn
@@ -53,7 +59,11 @@ def view_dishes(conn, chef_id):
 
 
 def add_dish(conn, chef_id):
-    dish_id = input("请输入菜品ID: ")
+    # 自动获取下一个可用的菜品ID
+    cursor = conn.cursor()
+    cursor.execute("SELECT COALESCE(MAX(DishID), 0) + 1 FROM Dish")
+    dish_id = cursor.fetchone()[0]
+    
     dish_name = input("请输入菜品名称: ")
     dish_description = input("请输入菜品描述: ")
 
@@ -61,10 +71,9 @@ def add_dish(conn, chef_id):
     values = (dish_id, dish_name, chef_id, dish_description)
 
     try:
-        cursor = conn.cursor()
         cursor.execute(query, values)
         conn.commit()
-        print("菜品添加成功！")
+        print("菜品添加成功！菜品ID: {}".format(dish_id))
     except mysql.connector.Error as err:
         print("菜品添加失败: {}".format(err))
 
@@ -88,7 +97,11 @@ def edit_dish(conn, chef_id):
 
 # 添加厨师账号
 def add_chef_account(conn):
-    chef_id = input("请输入厨师ID: ")
+    # 自动获取下一个可用的厨师ID
+    cursor = conn.cursor()
+    cursor.execute("SELECT COALESCE(MAX(ChefID), 0) + 1 FROM Chef")
+    chef_id = cursor.fetchone()[0]
+    
     name = input("请输入厨师姓名: ")
     specialty = input("请输入厨师特长: ")
     password = input("请输入密码: ")
@@ -96,11 +109,12 @@ def add_chef_account(conn):
     query = "INSERT INTO Chef (ChefID, Name, Specialty, Password) VALUES (%s, %s, %s, %s)"
     values = (chef_id, name, specialty, password)
 
-    cursor = conn.cursor()
-    cursor.execute(query, values)
-    conn.commit()
-
-    print("厨师账号已成功添加！")
+    try:
+        cursor.execute(query, values)
+        conn.commit()
+        print("厨师账号已成功添加！厨师ID: {}".format(chef_id))
+    except mysql.connector.Error as err:
+        print("厨师账号添加失败: {}".format(err))
 
 # 删除厨师账号
 def delete_chef_account(conn):
@@ -119,7 +133,11 @@ def delete_chef_account(conn):
 
 # 添加菜品信息
 def add_dish_info(conn):
-    dish_id = input("请输入菜品ID: ")
+    # 自动获取下一个可用的菜品ID
+    cursor = conn.cursor()
+    cursor.execute("SELECT COALESCE(MAX(DishID), 0) + 1 FROM Dish")
+    dish_id = cursor.fetchone()[0]
+    
     name = input("请输入菜品名称: ")
     chef_id = input("请输入所属厨师ID: ")
     description = input("请输入菜品描述: ")
@@ -127,11 +145,12 @@ def add_dish_info(conn):
     query = "INSERT INTO Dish (DishID, Name, ChefID, Description) VALUES (%s, %s, %s, %s)"
     values = (dish_id, name, chef_id, description)
 
-    cursor = conn.cursor()
-    cursor.execute(query, values)
-    conn.commit()
-
-    print("菜品信息已成功添加！")
+    try:
+        cursor.execute(query, values)
+        conn.commit()
+        print("菜品信息已成功添加！菜品ID: {}".format(dish_id))
+    except mysql.connector.Error as err:
+        print("菜品信息添加失败: {}".format(err))
 
 
 
